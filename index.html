@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중국어 발음 연습 프로그램</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #fef2f2 0%, #fef3c7 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-red-600 mb-2">🇨🇳 중국어 발음 연습</h1>
+                <p class="text-gray-600">국가명 한어병음과 뜻을 맞춰보세요!</p>
+            </div>
+
+            <div class="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="text-sm text-gray-600">
+                    라운드 <span id="round">1</span> • 진행률: <span id="progress">0</span>/<span id="total">24</span>
+                </div>
+                <div class="text-sm">
+                    정답률: <span id="accuracy">0</span>% (<span id="correct">0</span>/<span id="attempts">0</span>)
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="mb-4">
+                    <button id="playBtn" class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-lg text-xl font-bold flex items-center gap-3 mx-auto transition-colors">
+                        🔊 발음 듣기
+                    </button>
+                </div>
+                <p class="text-gray-500 text-sm">버튼을 클릭하여 중국어 발음을 들어보세요</p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- 한어병음 입력 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        한어병음 (로마자, 띄어쓰기 상관없음)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="pinyinInput"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="예: hán guó 또는 hánguó"
+                    />
+                </div>
+
+                <!-- 성조 선택 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        성조 추가 (마지막 알파벳에 성조 표시)
+                    </label>
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="addTone(1)" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                            1성 ˉ
+                        </button>
+                        <button onclick="addTone(2)" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                            2성 ˊ
+                        </button>
+                        <button onclick="addTone(3)" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                            3성 ˇ
+                        </button>
+                        <button onclick="addTone(4)" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                            4성 ˋ
+                        </button>
+                        <button onclick="removeTone()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                            성조 제거
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        예시: "han guo" 또는 "hanguo" 입력 후 각각 성조 버튼 클릭 → "hán guó" 또는 "hánguó"
+                    </div>
+                </div>
+
+                <!-- 뜻 입력 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        뜻 (한국어)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="meaningInput"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="예: 한국"
+                    />
+                </div>
+
+                <!-- 결과 표시 -->
+                <div id="result" class="hidden p-4 rounded-lg">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span id="resultIcon"></span>
+                        <span id="resultText" class="font-bold"></span>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <strong>정답:</strong>
+                            <div class="ml-4">
+                                <div>한자: <span id="correctChinese"></span></div>
+                                <div>병음: <span id="correctPinyin"></span></div>
+                                <div>뜻: <span id="correctMeaning"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 버튼들 -->
+                <div class="flex gap-3">
+                    <button id="checkBtn" onclick="checkAnswer()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-bold transition-colors">
+                        정답 확인
+                    </button>
+                    <button id="nextBtn" onclick="nextQuestion()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-colors hidden">
+                        다음 문제
+                    </button>
+                    
+                    <button onclick="location.reload()" class="px-6 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors">
+                        🔄
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-sm text-gray-500">
+            💡 팁: 병음을 입력한 후 성조 버튼을 눌러 마지막 글자에 성조를 추가하세요. 띄어쓰기는 자유롭게 하세요.
+        </div>
+    </div>
+
+    <script>
+        const countryData = [
+            { korean: '한국', chinese: '韩国', pinyin: 'hán guó', meaning: '한국' },
+            { korean: '일본', chinese: '日本', pinyin: 'rì běn', meaning: '일본' },
+            { korean: '중국', chinese: '中国', pinyin: 'zhōng guó', meaning: '중국' },
+            { korean: '인도', chinese: '印度', pinyin: 'yìn dù', meaning: '인도' },
+            { korean: '싱가포르', chinese: '新加坡', pinyin: 'xīn jiā pō', meaning: '싱가포르' },
+            { korean: '미국', chinese: '美国', pinyin: 'měi guó', meaning: '미국' },
+            { korean: '캐나다', chinese: '加拿大', pinyin: 'jiā ná dà', meaning: '캐나다' },
+            { korean: '브라질', chinese: '巴西', pinyin: 'bā xī', meaning: '브라질' },
+            { korean: '아르헨티나', chinese: '阿根廷', pinyin: 'ā gēn tíng', meaning: '아르헨티나' },
+            { korean: '칠레', chinese: '智利', pinyin: 'zhì lì', meaning: '칠레' },
+            { korean: '오스트레일리아', chinese: '澳大利亚', pinyin: 'ào dà lì yà', meaning: '오스트레일리아' },
+            { korean: '뉴질랜드', chinese: '新西兰', pinyin: 'xīn xī lán', meaning: '뉴질랜드' },
+            { korean: '영국', chinese: '英国', pinyin: 'yīng guó', meaning: '영국' },
+            { korean: '프랑스', chinese: '法国', pinyin: 'fǎ guó', meaning: '프랑스' },
+            { korean: '스페인', chinese: '西班牙', pinyin: 'xī bān yá', meaning: '스페인' },
+            { korean: '러시아', chinese: '俄罗斯', pinyin: 'é luó sī', meaning: '러시아' },
+            { korean: '독일', chinese: '德国', pinyin: 'dé guó', meaning: '독일' },
+            { korean: '이탈리아', chinese: '意大利', pinyin: 'yì dà lì', meaning: '이탈리아' },
+            { korean: '스웨덴', chinese: '瑞典', pinyin: 'ruì diǎn', meaning: '스웨덴' },
+            { korean: '벨기에', chinese: '比利时', pinyin: 'bǐ lì shí', meaning: '벨기에' },
+            { korean: '이집트', chinese: '埃及', pinyin: 'āi jí', meaning: '이집트' },
+            { korean: '남아프리카공화국', chinese: '南非共和国', pinyin: 'nán fēi gòng hé guó', meaning: '남아프리카공화국' },
+            { korean: '케냐', chinese: '肯尼亚', pinyin: 'kěn ní yà', meaning: '케냐' },
+            { korean: '나이지리아', chinese: '尼日利亚', pinyin: 'ní rì lì yà', meaning: '나이지리아' }
+        ];
+
+        let currentIndex = 0;
+        let shuffledIndices = [];
+        let usedIndices = new Set();
+        let score = { correct: 0, total: 0 };
+        let round = 1;
+
+        // 성조 매핑
+        const toneMap = {
+            'a': ['ā', 'á', 'ǎ', 'à'],
+            'e': ['ē', 'é', 'ě', 'è'],
+            'i': ['ī', 'í', 'ǐ', 'ì'],
+            'o': ['ō', 'ó', 'ǒ', 'ò'],
+            'u': ['ū', 'ú', 'ǔ', 'ù'],
+            'ü': ['ǖ', 'ǘ', 'ǚ', 'ǜ'],
+            'v': ['ǖ', 'ǘ', 'ǚ', 'ǜ']
+        };
+
+        // 셔플 함수
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // 초기화
+        function init() {
+            const indices = Array.from({ length: countryData.length }, (_, i) => i);
+            shuffledIndices = shuffleArray(indices);
+            updateUI();
+        }
+
+        // UI 업데이트
+        function updateUI() {
+            const progress = usedIndices.size;
+            document.getElementById('round').textContent = round;
+            document.getElementById('progress').textContent = progress;
+            document.getElementById('total').textContent = countryData.length;
+            document.getElementById('correct').textContent = score.correct;
+            document.getElementById('attempts').textContent = score.total;
+            document.getElementById('accuracy').textContent = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
+        }
+
+        // 현재 단어 가져오기
+        function getCurrentWord() {
+            return countryData[shuffledIndices[currentIndex]];
+        }
+
+        // TTS 함수
+        function speakChinese() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(getCurrentWord().chinese);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 성조 추가
+        function addTone(tone) {
+            const input = document.getElementById('pinyinInput');
+            const text = input.value;
+            if (!text) return;
+            
+            const lastChar = text.slice(-1).toLowerCase();
+            if (toneMap[lastChar]) {
+                const newText = text.slice(0, -1) + toneMap[lastChar][tone - 1];
+                input.value = newText;
+            }
+        }
+
+        // 성조 제거
+        function removeTone() {
+            const input = document.getElementById('pinyinInput');
+            const text = input.value;
+            if (!text) return;
+            
+            const lastChar = text.slice(-1);
+            const toneChars = 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ';
+            const baseChars = 'aaaaeeeeiiiioooouuuuüüüü';
+            
+            const toneIndex = toneChars.indexOf(lastChar);
+            if (toneIndex !== -1) {
+                const baseChar = baseChars[toneIndex];
+                input.value = text.slice(0, -1) + baseChar;
+            }
+        }
+
+        // 정답 확인
+        function checkAnswer() {
+            const userPinyin = document.getElementById('pinyinInput').value.toLowerCase().replace(/\s+/g, '');
+            const userMeaning = document.getElementById('meaningInput').value.trim();
+            
+            const currentWord = getCurrentWord();
+            const correctPinyin = currentWord.pinyin.toLowerCase().replace(/\s+/g, '');
+            const correctMeaning = currentWord.meaning;
+
+            const pinyinCorrect = correctPinyin === userPinyin;
+            const meaningCorrect = correctMeaning === userMeaning;
+            const allCorrect = pinyinCorrect && meaningCorrect;
+            
+            // 점수 업데이트
+            if (allCorrect) score.correct++;
+            score.total++;
+            
+            // 결과 표시
+            const resultDiv = document.getElementById('result');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultText = document.getElementById('resultText');
+            
+            if (allCorrect) {
+                resultDiv.className = 'p-4 rounded-lg bg-green-50 border border-green-200';
+                resultIcon.textContent = '✓';
+                resultIcon.className = 'text-green-600';
+                resultText.textContent = '정답입니다!';
+                resultText.className = 'font-bold text-green-600';
+            } else {
+                resultDiv.className = 'p-4 rounded-lg bg-red-50 border border-red-200';
+                resultIcon.textContent = '✗';
+                resultIcon.className = 'text-red-600';
+                resultText.textContent = '틀렸습니다!';
+                resultText.className = 'font-bold text-red-600';
+            }
+
+            // 정답 표시
+            document.getElementById('correctChinese').textContent = currentWord.chinese;
+            document.getElementById('correctPinyin').textContent = currentWord.pinyin;
+            document.getElementById('correctMeaning').textContent = currentWord.meaning;
+            
+            resultDiv.classList.remove('hidden');
+            document.getElementById('checkBtn').classList.add('hidden');
+            document.getElementById('nextBtn').classList.remove('hidden');
+            
+            // 입력 비활성화
+            document.getElementById('pinyinInput').disabled = true;
+            document.getElementById('meaningInput').disabled = true;
+            
+            updateUI();
+        }
+
+        // 다음 문제
+        function nextQuestion() {
+            const newUsedIndices = new Set([...usedIndices, shuffledIndices[currentIndex]]);
+            
+            if (newUsedIndices.size === countryData.length) {
+                // 한 바퀴 완료, 새로운 라운드 시작
+                const indices = Array.from({ length: countryData.length }, (_, i) => i);
+                shuffledIndices = shuffleArray(indices);
+                currentIndex = 0;
+                usedIndices = new Set();
+                round++;
+            } else {
+                usedIndices = newUsedIndices;
+                currentIndex++;
+            }
+
+            // 입력 초기화
+            document.getElementById('pinyinInput').value = '';
+            document.getElementById('meaningInput').value = '';
+            document.getElementById('pinyinInput').disabled = false;
+            document.getElementById('meaningInput').disabled = false;
+            
+            // 버튼 상태 변경
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('checkBtn').classList.remove('hidden');
+            document.getElementById('nextBtn').classList.add('hidden');
+            
+            updateUI();
+        }
+
+        // 이벤트 리스너
+        document.getElementById('playBtn').addEventListener('click', speakChinese);
+        
+        // 엔터키 이벤트
+        document.getElementById('pinyinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('meaningInput').focus();
+            }
+        });
+        
+        document.getElementById('meaningInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (!document.getElementById('checkBtn').classList.contains('hidden')) {
+                    checkAnswer();
+                }
+            }
+        });
+
+        // 정답 확인 버튼 활성화/비활성화
+        function updateCheckButton() {
+            const pinyin = document.getElementById('pinyinInput').value;
+            const meaning = document.getElementById('meaningInput').value;
+            const checkBtn = document.getElementById('checkBtn');
+            
+            if (pinyin && meaning) {
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                checkBtn.disabled = true;
+                checkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        document.getElementById('pinyinInput').addEventListener('input', updateCheckButton);
+        document.getElementById('meaningInput').addEventListener('input', updateCheckButton);
+
+        // 초기화 실행
+        init();
+        updateCheckButton();
+    </script>
+</body>
+</html>
